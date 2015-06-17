@@ -32,7 +32,8 @@ import com.microsoft.aad.adal4jsample.*;
  * */
 public class MainClass {
 	
-	private final static String AUTHORITY = "https://login.windows.net/common"; 
+	//private final static String AUTHORITY = "https://login.windows.net/common"; 
+	private static String AUTHORITY = "https://login.microsoftonline.com/<yourguidfromAzureADportalProtocol>";
 	private static String CLIENT_ID = "<guid>";
 	private static String TENANT = "<yourdomani>.onmicrosoft.com";
 	private static String USERNAME = "<user>@<yourdomani>.onmicrosoft.com";
@@ -46,15 +47,17 @@ public class MainClass {
 		USERNAME = args[1];
 		PASSWORD =  args[2];
 		CLIENT_ID =  args[3];
+		AUTHORITY = args[4];
 				
 		System.out.println("Calling...");
 		
 		try{
+			AuthenticationResult result = null;
 			
 			System.out.println("Getting Access Token for Graph API..." );
 			
 			// Working with Graph API
-			AuthenticationResult result = getAccessTokenFromUserCredentials(
+			result = getAccessTokenFromUserCredentials(
             		"https://graph.windows.net",
             		USERNAME,PASSWORD
                     );
@@ -64,10 +67,26 @@ public class MainClass {
             
 			String username = getUsernamesFromGraph(result.getAccessToken(), TENANT);
             System.out.println("Usernames:\n" + username);
-            
+			
+            // Working with Office 365 API - File API
             System.out.println("Getting Access Token for Outlook (Office 365) API..." );
             
-            // Working with Office 365 API
+            result = getAccessTokenFromUserCredentials(
+            		"https://paint4kids-my.sharepoint.com/",
+            		//"https://outlook.office365.com",
+            		//"https://graph.windows.net",
+            		USERNAME,PASSWORD
+                    );
+            
+            System.out.println("Access Token - " + result.getAccessToken());
+            System.out.println("Refresh Token - " + result.getRefreshToken());
+            
+            String infofiles =  getMyFilesInfo(result.getAccessToken());
+            System.out.println("Some fileinfo:\n" + infofiles);
+           
+            // Working with Office 365 API - Mail API
+            System.out.println("Getting Access Token for Office 365 Mail API..." );
+            
             result = getAccessTokenFromUserCredentials(
             		"https://outlook.office365.com",
             		USERNAME,PASSWORD
@@ -80,6 +99,7 @@ public class MainClass {
             
             System.out.println("Some mail messages (subjects):\n" + messages);
             System.out.println("Done.");
+            
         }
 		catch(Exception e){
 			System.out.println("Error: - " + e.getMessage());
@@ -166,4 +186,29 @@ public class MainClass {
         return builder.toString();
     }
 
+	
+	private static String getMyFilesInfo(String accessToken) throws Exception {
+        URL url = new URL(String.format("https://paint4kids-my.sharepoint.com/_api/v1.0/me/files",
+                accessToken));
+
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        // Set the appropriate header fields in the request header.
+        conn.setRequestProperty("Authorization", "Bearer " + accessToken);
+        conn.setRequestProperty("Accept", "application/json;odata.metadata=full");
+        String goodRespStr = HttpClientHelper.getResponseStringFromConn(conn, true);
+        
+        int responseCode = conn.getResponseCode();
+        JSONObject response = HttpClientHelper.processGoodRespStr(responseCode, goodRespStr);
+        JSONArray messages = new JSONArray();
+
+        messages = JSONHelper.fetchDirectoryObjectJSONArray(response);
+
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < messages.length(); i++) {
+            JSONObject thisJSONObject = messages.optJSONObject(i);
+            
+            builder.append(thisJSONObject + "\n");
+        }
+        return builder.toString();
+    }
 }
