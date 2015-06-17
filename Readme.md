@@ -5,7 +5,9 @@ This sample demostrate how to authenticate an Office 365 user from a Java applic
   - Create an Access and Refresh Token to call Azure AD Graph APIs.
   - Call the Azure AD Graph API to get a list of users registered in Azure AD.
   - Create an Access and Refresh Token to call Office 365 Outlook APIs.
-  - Call the Office 365 Outlooki APIs via REST and get a list of user's mail messages.
+  - Call the Office 365 Outlook APIs via REST and get a list of user's mail messages.
+  - Create an Access and Refresh Token to call Office 365 File APIs.
+  - Call the Office 365 File APIs via REST and get a list of user's OneDrive for business files.
 
 To make this sample works you need to create a Azure AD Native application and autorize for the API you want to call.
 You can add a [native client application] in Azure and [grant proper permissions] to it.
